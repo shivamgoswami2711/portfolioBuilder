@@ -1,0 +1,77 @@
+/* Carousel container */
+.carousel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+  }
+  
+  /* Individual slide */
+  .slide {
+    display: none;
+    padding: 20px;
+    background-color: #fff;
+    /* border: 1px solid #ccc; */
+    border-radius: 5px;
+    /* box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3); */
+    width: 100%;
+    max-width: 100%;
+    transition: opacity 0.3s ease-in-out;
+  }
+  
+  /* Active slide */
+  .slide.active {
+    display: block;
+  }
+  
+  /* Navigation buttons */
+  button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    margin: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    outline: none;
+  }
+  
+  button:hover {
+    background-color: #0056b3;
+  }
+  
+
+  .slide button:disabled{
+    display: none;
+  }
+
+  .Gold{
+    background-color: Gold;
+  }
+  .navy{
+    background-color: navy;
+  }
+  .red{
+    background-color: red;
+  }
+  .yellow{
+    background-color: yellow;
+  }
+  .blue{
+    background-color: blue;
+  }
+  .Orange{
+    background-color: Orange;
+  }
+  .Brown{
+    background-color: Brown;
+  }
+  .Purple{
+    background-color: Purple;
+  }
+  .Violet{
+    background-color: Violet;
+  }
