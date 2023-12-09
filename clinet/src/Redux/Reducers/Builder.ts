@@ -1,12 +1,12 @@
 import {createReducer} from '@reduxjs/toolkit'
-import {JSONElement} from "../../utils/HTMLRenderer"
+import {JSONElement} from "../../utils/preview/HTMLRendererBuilder"
 import {generateRandomString} from '../../utils/util';
 
 
 interface stack {
     section?: string[];
     template?: Record<string, any>;
-    custom?:JSONElement
+    custom?: JSONElement
 }
 
 interface BuilderState {
@@ -76,10 +76,13 @@ const BuilderReducer = createReducer(init, {
     },
 
 
-    dropElement: (state, action) => {
-        state.custom = addChildByCustomId(state.custom, action.customId, action.draggedElement);
+    DropElement: (state, action) => {
+        state.custom = addChildByCustomId(state.custom, action.customId, action.draggedElement, action.dropId, action.dropPosition);
         state.actionStack.push({custom: state.custom})
         state.undoStack = []
+    },
+    CustomTextEdit: (state, action) => {
+        state.custom = textChange(state.custom, action.text, action.id)
     },
 
     // template action 
@@ -170,7 +173,20 @@ const BuilderReducer = createReducer(init, {
 })
 
 
-function addChildByCustomId(data: JSONElement, customIdToMatch: string, childToAdd: JSONElement): JSONElement {
+function textChange(data: JSONElement, text: string, id: string): JSONElement {
+    if (data.customId === id) {
+        data.text = text
+    } else {
+        if (data.children) {
+            for (const child of data.children) {
+                textChange(child, text, id)
+            }
+        }
+    }
+    return data
+}
+
+function addChildByCustomId(data: JSONElement, customIdToMatch: string, childToAdd: JSONElement, dropId: string, dropPosition: string): JSONElement {
     const string = generateRandomString(8);
     let updatedData = childToAdd;
     if (!childToAdd.customId) {
@@ -180,16 +196,31 @@ function addChildByCustomId(data: JSONElement, customIdToMatch: string, childToA
         };
 
     }
-    
+
     if (data.customId === customIdToMatch) {
         if (!data.children) {
             data.children = [];
         }
-        data.children.push(updatedData);
+        if (dropId) {
+            data.children.forEach((child, index) => {
+                if (child.customId === dropId) {
+                    if (dropPosition === "above") {
+                        dropId = ""
+                        data.children && data.children.splice(index, 0, updatedData);
+                    } else {
+                        dropId = ""
+                        data.children && data.children.splice(index + 1, 0, updatedData);
+                    }
+
+                }
+            })
+        } else {
+            data.children.push(updatedData);
+        }
     } else {
         if (data.children) {
             for (const child of data.children) {
-                addChildByCustomId(child, customIdToMatch, updatedData);
+                addChildByCustomId(child, customIdToMatch, updatedData, dropId, dropPosition);
             }
         }
     }

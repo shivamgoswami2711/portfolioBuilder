@@ -1,5 +1,5 @@
 import React from 'react'
-import HTMLRenderer from '../../../utils/HTMLRenderer';
+import HTMLRenderer from '../../../utils/preview/HTMLRendererBuilder';
 import {useNavigate} from 'react-router-dom';
 const htmlData = [
   {

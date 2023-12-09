@@ -1,14 +1,6 @@
-interface JSONElement {
-    tag: string;
-    text?: string;
-    class?: string;
-    id?: string;
-    children?: JSONElement[];
-}
+import {JSONElementBuilder} from "./preview/HTMLRendererBuilder";
 
-interface DataObject {
-    [key: string]: JSONElement; // You can specify the type of values as per your data structure
-}
+
 
 
 export const data: Record<string, any> = {
@@ -216,47 +208,51 @@ export const data: Record<string, any> = {
     }
 }
 
-export const elements: JSONElement[] = [
+export const elements: JSONElementBuilder[] = [
     {
         tag: 'h1',
         class: 'green',
         id: 'h1',
-        text:"h1 Text",
-        children: []
+        text: "h1 Text",
+        children: [],
+        editable: true,
     },
     {
         tag: 'div',
         class: 'flex',
         id: 'h1',
-        text:"flex",
+        text: "flex",
         children: []
     },
     {
         tag: 'div',
         class: '',
         id: 'h1',
-        text:"div",
+        text: "div",
         children: []
     },
     {
         tag: 'h2',
         class: 'green',
         id: 'h2',
-        text:"h2 Text",
-        children: []
+        text: "h2 Text",
+        children: [],
+        editable: true,
     },
     {
         tag: 'h3',
         class: 'green',
         id: 'h3',
-        text:"h3 Text",
-        children: []
+        text: "h3 Text",
+        children: [],
+        editable: true,
     },
     {
         tag: 'p',
         class: 'gray',
         id: 'p',
-        text:"Text",
-        children: []
+        text: "Text",
+        children: [],
+        editable: true,
     },
 ] 

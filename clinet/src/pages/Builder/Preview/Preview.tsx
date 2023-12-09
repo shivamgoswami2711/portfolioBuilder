@@ -1,8 +1,8 @@
-import React, {useState, useEffect} from "react";
-import HTMLRenderer from "../../../utils/HTMLRenderer";
-import {useDispatch, useSelector} from "react-redux";
+import React from "react";
+import HTMLRenderer from "../../../utils/preview/HTMLRendererBuilder";
+import { useSelector} from "react-redux";
 import {RootState} from "../../../Redux/store";
-import {JSONElement} from "../../../utils/HTMLRenderer";
+import {JSONElement} from "../../../utils/preview/HTMLRendererBuilder";
 
 function Preview() {
   const {template} = useSelector((state: RootState) => state.builder);

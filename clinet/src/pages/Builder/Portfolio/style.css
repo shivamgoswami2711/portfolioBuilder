@@ -12,9 +12,11 @@ section{
     display: flex;
     justify-content: space-around;
     align-items: center;
+   
 }
 .section div{
     border: 0.1px solid rgb(189, 189, 189);
+     flex: 1;
 }
 .section div.dragedElement{
     border: 0.1px solid #ffee00;

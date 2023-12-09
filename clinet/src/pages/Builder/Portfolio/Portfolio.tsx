@@ -1,12 +1,13 @@
-import React, {useState, useEffect} from 'react'
+import React, { useEffect} from 'react'
 // import {useLocation, useParams} from 'react-router-dom'
 import {data, elements} from '../../../utils/data'
 import Corousel from '../../../components/Corousel/Corousel';
 import {useDispatch, useSelector} from "react-redux"
 import {RootState} from "../../../Redux/store"
-import HTMLRenderer, {JSONElement} from "../../../utils/HTMLRenderer"
+import HTMLRendererBuilder, {JSONElement} from "../../../utils/preview/HTMLRendererBuilder"
 import {Link} from 'react-router-dom';
 import "./style.css";
+import ElementReanderer from '../../../utils/ElementReanderer';
 
 
 function Portfolio() {
@@ -36,7 +37,7 @@ function Portfolio() {
         return () => {
             window.removeEventListener('keydown', handleUndo);
         };
-    }, []);
+    }, [dispatch]);
 
     useEffect(() => {
         const storedData = localStorage.getItem("section");
@@ -50,7 +51,7 @@ function Portfolio() {
             const parsedData = JSON.parse(Template);
             dispatch({type: "TemplatelocalAdd", payload: parsedData})
         }
-    }, []);
+    }, [dispatch]);
 
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, element: {sectionType: string, index: number}) => {
@@ -77,7 +78,7 @@ function Portfolio() {
         <div className='portfolioBuilder'>
             <div>
                 {
-                    elements.map((element, Index) => <HTMLRenderer key={Index} jsonData={element} />)
+                    elements.map((element, Index) => <ElementReanderer key={Index} jsonData={element} />)
                 }
             </div>
             <div>
@@ -101,7 +102,7 @@ function Portfolio() {
                         }
                         else if (sectionType === "custom") {
                             return <>
-                                <HTMLRenderer jsonData={custom} />
+                                <HTMLRendererBuilder jsonData={custom} />
                                 <div><input type="button" value="delete" onClick={() => {
                                     dispatch({type: "DeleteSectionSelectType", index});
                                     dispatch({type: "DeleteTemplate", index});

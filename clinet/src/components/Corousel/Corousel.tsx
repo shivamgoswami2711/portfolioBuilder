@@ -47,7 +47,7 @@ const Corousel: React.FC<CarouselProps> = ({components, sectionIndex, selectedCo
       dispatch({type: 'LocalCorouselData', payload: parsedData})
       setCurrentCorousel(parsedData[sectionIndex] || 0)
     }
-  }, [sectionIndex]);
+  }, [sectionIndex,dispatch]);
 
   useEffect(() => {
     setCurrentCorousel(+corousel[sectionIndex] || 0)
@@ -65,7 +65,7 @@ const Corousel: React.FC<CarouselProps> = ({components, sectionIndex, selectedCo
             className={`slide ${Corousel === currentCorousel ? 'active' : ''}`}
           >
             <HTMLRenderer key={Corousel} jsonData={component} />
-            <button disabled={JSON.stringify(template[sectionIndex]) == JSON.stringify(component
+            <button disabled={JSON.stringify(template[sectionIndex]) === JSON.stringify(component
             )} onClick={() => selectedComponent(component, sectionIndex)}>selected</button>
           </div>
         )

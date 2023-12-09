@@ -1,0 +1,18 @@
+.EditActionComponent {
+  position: relative;
+}
+
+.EditActionComponent > ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+}
+
+.EditActionComponent > ul > li {
+  margin-left: 10px;
+  cursor: pointer;
+}
