@@ -85,6 +85,14 @@ const BuilderReducer = createReducer(init, {
         state.custom = textChange(state.custom, action.text, action.id)
     },
 
+
+
+    deleteElement: (state, action) => {
+        deleteElement(state.custom, action.id)
+    },
+
+
+
     // template action 
 
     TemplatelocalAdd: (state, action) => {
@@ -173,7 +181,30 @@ const BuilderReducer = createReducer(init, {
 })
 
 
+function deleteElement(element: JSONElement, targetId: string): JSONElement | null {
+    if (element.customId === targetId) {
+        // If the current element has the targetId, return null to remove it
+        return null;
+    }
+
+    if (element.children && element.children.length > 0) {
+        // If the element has children, recursively call deleteElementById on each child
+        const updatedChildren = element.children.map(child => deleteElement(child, targetId));
+
+        // Filter out null values (deleted elements) from the children array
+        element.children = updatedChildren.filter(child => child !== null) as JSONElement[];
+
+        // If all children were deleted, return null to remove the current element
+        return element.children.length > 0 ? element : null;
+    }
+
+    // If the element doesn't have the targetId and no children, return the element as is
+    return element;
+}
+
+
 function textChange(data: JSONElement, text: string, id: string): JSONElement {
+    console.log(id)
     if (data.customId === id) {
         data.text = text
     } else {

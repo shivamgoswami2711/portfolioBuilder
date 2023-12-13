@@ -1,4 +1,4 @@
-import React, { useEffect} from 'react'
+import React, {useEffect, useState} from 'react'
 // import {useLocation, useParams} from 'react-router-dom'
 import {data, elements} from '../../../utils/data'
 import Corousel from '../../../components/Corousel/Corousel';
@@ -15,7 +15,7 @@ function Portfolio() {
     // const {portfolio} = useParams()
     // const {index} = useLocation().state
     const {section, custom} = useSelector((state: RootState) => state.builder);
-
+    const [elemntSectionButton, setElemntSectionButton] = useState<string>("Element")
 
     const selectedComponent = (Element: JSONElement, sectionIndex: number) => {
         dispatch({type: "AddTemplate", element: Element, index: sectionIndex})
@@ -77,8 +77,12 @@ function Portfolio() {
     return (
         <div className='portfolioBuilder'>
             <div>
+                <div className='Element__Button__cantainer'>
+                    <span className={elemntSectionButton === "Element" ? "active" : ""} onClick={() => setElemntSectionButton("Element")}>Element</span>
+                    <span className={elemntSectionButton === "Edit" ? "active" : ""} onClick={() => setElemntSectionButton("Edit")}>Edit</span>
+                </div>
                 {
-                    elements.map((element, Index) => <ElementReanderer key={Index} jsonData={element} />)
+                    elemntSectionButton === "Element" && elements.map((element, Index) => <ElementReanderer key={Index} jsonData={element} />)
                 }
             </div>
             <div>

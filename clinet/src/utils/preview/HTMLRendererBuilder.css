@@ -1,4 +1,7 @@
-/* .edit::after {
-  display: block;
-  content: "<div>dglhg<div>";
-} */
+.edit {
+  border: 1px solid #bff863 !important;
+  outline: none !important;
+}
+#doZ6iZUR {
+  height: 100vh;
+}

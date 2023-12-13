@@ -4,6 +4,7 @@ import "./HTMLRendererBuilder.css";
 import {generateRandomString} from '../util';
 import ReactDOM from 'react-dom';
 import EditActionButton from './EditActionButton/EditActionButton';
+import {SiblingFinder} from './utils/util';
 
 export interface JSONElement {
   tag: string;
@@ -14,21 +15,43 @@ export interface JSONElement {
   children?: JSONElement[];
 }
 
+
 export interface JSONElementBuilder extends JSONElement {
   editable?: boolean;
+
 }
 interface EditTextStateDataType {
   text: string;
   id: string;
 }
 
-type ActionButtonComponentProps = {
-  onClick: () => void;
+const debounce = <T extends (...args: any[]) => void>(func: T, delay: number) => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func.apply(this, args);
+    }, delay);
+  };
+};
+
+const throttle = <T extends (...args: any[]) => void>(func: T, limit: number) => {
+  let lastCallTime = 0;
+
+  return function (this: ThisParameterType<T>, ...args: Parameters<T>) {
+    const now = Date.now();
+
+    if (now - lastCallTime >= limit) {
+      func.apply(this, args);
+      lastCallTime = now;
+    }
+  };
 };
 
 
 
-function jsonToJSX(jsonData: JSONElementBuilder, onDragStart: (e: React.DragEvent<HTMLDivElement>, element: JSONElementBuilder) => void, onDragOver: (e: React.DragEvent<HTMLDivElement>) => void, onDrop: (e: React.DragEvent<HTMLDivElement>, element: JSONElementBuilder) => void, onTextChange: (text: string, id: string) => void, onDoubleClick: (e: React.MouseEvent<HTMLDivElement>) => void, onBlurEvent: (e: React.FocusEvent<HTMLDivElement>) => void): JSX.Element {
+
+function jsonToJSX(jsonData: JSONElementBuilder, onDragStart: (e: React.DragEvent<HTMLDivElement>, element: JSONElementBuilder) => void, onDragOver: (e: React.DragEvent<HTMLDivElement>, element: JSONElementBuilder) => void, onDragLeave: (e: React.DragEvent<HTMLDivElement>) => void, onDrop: (e: React.DragEvent<HTMLDivElement>, element: JSONElementBuilder) => void, onTextChange: (text: string, id: string) => void, onDoubleClick: (e: React.MouseEvent<HTMLDivElement>) => void, onBlurEvent: (e: React.FocusEvent<HTMLDivElement>) => void): JSX.Element {
   const {tag, text, customId, class: className, children} = jsonData;
   const attributes: {[key: string]: string | Function | Object} = {};
 
@@ -37,12 +60,17 @@ function jsonToJSX(jsonData: JSONElementBuilder, onDragStart: (e: React.DragEven
   if (customId) attributes.id = `${customId}`;
   attributes.draggable = 'true';
   attributes.onDragStart = (e: React.DragEvent<HTMLDivElement>) => onDragStart(e, jsonData);
-  attributes.onDragOver = (e: React.DragEvent<HTMLDivElement>) => onDragOver(e);
+  attributes.onDragOver = (e: React.DragEvent<HTMLDivElement>) => onDragOver(e, jsonData);
+  attributes.onDragLeave = (e: React.DragEvent<HTMLDivElement>) => onDragLeave(e);
   attributes.onDrop = (e: React.DragEvent<HTMLDivElement>) => onDrop(e, jsonData);
   attributes.onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => onDoubleClick(e);
   attributes.onBlur = (e: React.FocusEvent<HTMLDivElement>) => onBlurEvent(e);
   attributes.key = customId || generateRandomString(3);
-  attributes.onInput = (e: React.FormEvent<HTMLElement>) => onTextChange(e.currentTarget.textContent || "", e.currentTarget.id);
+  attributes.onInput = (e: React.FormEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onTextChange(e.currentTarget.textContent || "", e.currentTarget.id);
+  }
 
 
   attributes.onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -50,7 +78,7 @@ function jsonToJSX(jsonData: JSONElementBuilder, onDragStart: (e: React.DragEven
     e.stopPropagation();
     // Add your className here
     e.currentTarget.classList.add("dragedElement");
-    onDragOver(e);
+    onDragOver(e, jsonData);
   };
 
   attributes.onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
@@ -58,7 +86,7 @@ function jsonToJSX(jsonData: JSONElementBuilder, onDragStart: (e: React.DragEven
     e.stopPropagation();
     // Add your className here
     e.currentTarget.classList.remove("dragedElement");
-    onDragOver(e);
+    onDragOver(e, jsonData);
   };
 
   if (!children && !text) {
@@ -78,7 +106,7 @@ function jsonToJSX(jsonData: JSONElementBuilder, onDragStart: (e: React.DragEven
   // Recursively process children
 
   const childElements = children.map((child, index) => {
-    return jsonToJSX(child, onDragStart, onDragOver, onDrop, onTextChange, onDoubleClick, onBlurEvent)
+    return jsonToJSX(child, onDragStart, onDragOver, onDragLeave, onDrop, onTextChange, onDoubleClick, onBlurEvent)
   });
 
   return React.createElement(tag, {...attributes}, childElements);
@@ -93,25 +121,107 @@ interface HTMLRendererProps {
 
 const HTMLRenderer: React.FC<HTMLRendererProps> = ({jsonData}) => {
   const dispatch = useDispatch()
-  const [changeData, setChangeData] = useState<EditTextStateDataType>()
+  const [changeData, setChangeData] = useState<EditTextStateDataType>({text: "", id: ""})
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  // const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  //   e.preventDefault();
+  //   e.stopPropagation();
+  //   const mouseY = e.clientY;
+  //   const mouseX = e.clientX;
+  //   const dropTarget = e.target as HTMLElement;
+  //   let dropPosition: 'above' | 'below' = 'above';
+
+  //   // Get the position of the target element
+  //   const targetRect = dropTarget.getBoundingClientRect();
+  //   // Calculate the vertical midpoint of the target element
+  //   const targetMidY = targetRect.top + targetRect.height / 2;
+
+  //   // Determine if the mouse is above or below the midpoint
+  //   if (mouseY > targetMidY) {
+  //     dropPosition = 'below';
+  //   } else {
+  //     dropPosition = 'above';
+  //   }
+
+  //   // Example: Logging the drop position
+  //   const DropLocationBox = document.querySelector('.dropDetectionBox');
+  //   if (!DropLocationBox) {
+  //     const dropDetectionBox = document.createElement('div');
+  //     dropDetectionBox.className = 'dropDetectionBox';
+  //     const dropDetectionBoxDotted = document.createElement('div');
+  //     dropDetectionBoxDotted.className = 'dropDetectionBoxDotted';
+  //     const spanText = document.createElement('span');
+  //     spanText.innerText = `drop here`;
+  //     dropDetectionBoxDotted.append(spanText)
+  //     dropDetectionBox.append(dropDetectionBoxDotted)
+  //     dropTarget.insertAdjacentElement(dropPosition == "above" ? 'beforebegin' : 'beforeend', dropDetectionBox);
+
+  //   }
+  // };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, element: JSONElementBuilder) => {
     e.preventDefault();
     e.stopPropagation();
+    const mouseY = e.clientY;
+    const mouseX = e.clientX;
+    const dropTarget = e.target as HTMLElement;
+    let dropPosition: 'above' | 'below' = 'above';
+
+    // Get the position of the target element
+    const targetRect = dropTarget.getBoundingClientRect();
+
+    // Calculate the vertical midpoint of the target element
+    const targetMidY = targetRect.top + targetRect.height / 2;
+
+    // Determine if the mouse is above or below the midpoint
+    if (element.customId !== "doZ6iZUR") {
+      if (mouseY > targetMidY) {
+        dropPosition = 'below';
+      } else {
+        dropPosition = 'above';
+      }
+    } else {
+      dropPosition = 'below';
+    }
+
+    SiblingFinder()
+    
+    // Remove existing drop position indicators
+    const existingIndicators = document.querySelectorAll('.dropDetectionBox');
+    existingIndicators.forEach(indicator => indicator.remove());
+    
+    // Add a new drop position indicator
+    const dropDetectionBox = document.createElement('div');
+    dropDetectionBox.className = 'dropDetectionBox';
+    dropDetectionBox.id = dropTarget.id;
+    const dropDetectionBoxDotted = document.createElement('div');
+    dropDetectionBoxDotted.className = 'dropDetectionBoxDotted';
+    const spanText = document.createElement('span');
+    spanText.innerText = `drop here`;
+    dropDetectionBoxDotted.append(spanText);
+    dropDetectionBox.append(dropDetectionBoxDotted);
+
+    // Add the new indicator based on the drop position
+    dropTarget.insertAdjacentElement(dropPosition === 'above' ? 'beforebegin' : 'beforeend', dropDetectionBox);
   };
+
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, element: JSONElementBuilder) => {
     e.dataTransfer.setData('object', JSON.stringify(element));
     e.stopPropagation();
   };
 
-
+  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    document.querySelector('.dropDetectionBox')?.remove()
+  }
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, element: JSONElementBuilder) => {
     e.preventDefault();
     e.stopPropagation();
     const dropTarget = e.target as HTMLElement;
     const elementData = e.dataTransfer.getData('object');
-    let id = "";
+    let id = dropTarget.id;
     let dropPosition: 'above' | 'below' = 'above';
     if (elementData) {
       // Convert NodeList to an array and then iterate
@@ -119,20 +229,23 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({jsonData}) => {
       for (const childNode of childNodesArray) {
         if (childNode.nodeType === Node.ELEMENT_NODE) {
           const element = childNode as HTMLElement;
-          if (element.id) {
-            id = element.id;
-            const mouseX = e.clientX;
-            const elementLeft = element.getBoundingClientRect().left;
-            if (mouseX > elementLeft + element.clientWidth / 2) {
-              dropPosition = 'below';
-            }
-            const mouseY = e.clientY;
-            const elementTop = element.getBoundingClientRect().top;
-            if (mouseY > elementTop + element.clientHeight / 2) {
-              dropPosition = 'below';
-            }
+          if (element.id !== "doZ6iZUR") {
+            if (element.id) {
+              const mouseX = e.clientX;
+              const elementLeft = element.getBoundingClientRect().left;
+              if (mouseX > elementLeft + element.clientWidth / 2) {
+                dropPosition = 'below';
+              }
+              const mouseY = e.clientY;
+              const elementTop = element.getBoundingClientRect().top;
+              if (mouseY > elementTop + element.clientHeight / 2) {
+                dropPosition = 'below';
+              }
 
-            break; // Exit the loop after the first element with an ID is found
+              break; // Exit the loop after the first element with an ID is found
+            }
+          } else {
+            dropPosition = 'below';
           }
         }
       }
@@ -140,40 +253,21 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({jsonData}) => {
     e.currentTarget.classList.remove("dragedElement");
     if (elementData) {
       const draggedElement = JSON.parse(elementData) as Element;
+      console.log({draggedElement, customId: element?.customId, dropId: id, dropPosition})
       dispatch({type: "DropElement", draggedElement, customId: element?.customId, dropId: id, dropPosition})
     }
+    document.querySelector('.dropDetectionBox')?.remove()
   };
 
 
-
-
   const onTextChange = (text: string, id: string) => {
-    setChangeData({text, id})
-    // dispatch({type: "CustomTextEdit", text, id})
-    // const contentEditableElement = document.getElementById(id);
-    // if (contentEditableElement) {
-    //   const selection = window.getSelection();
-
-    //   // Save the current selection
-    //   if (selection) {
-    //     const range = selection.getRangeAt(0);
-    //     // Update the content
-    //     contentEditableElement.textContent = text;
-
-    //     // Restore the selection
-    //     const updatedRange = document.createRange();
-    //     const offset = range.startOffset;
-    //     console.log(contentEditableElement.firstChild!)
-    //     updatedRange.setStart(contentEditableElement.firstChild!, offset);
-    //     updatedRange.setEnd(contentEditableElement.firstChild!, offset);
-    //     selection.removeAllRanges();
-    //     selection.addRange(updatedRange);
-    //   }
-    // }
+    setChangeData((pre: EditTextStateDataType) => ({...pre, text}))
   }
 
 
   const onDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     const target = e.target as HTMLDivElement;
     target.contentEditable = "true";
     target.classList.add("edit")
@@ -184,14 +278,16 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({jsonData}) => {
     if (!addedElement) {
       // If not, insert the action button before the editable content
       const actionButtonContainer = document.createElement("div");
-      ReactDOM.render(<EditActionButton />, actionButtonContainer);
-      target.insertAdjacentElement('beforebegin', actionButtonContainer.firstChild as Element);
+      ReactDOM.render(<EditActionButton id={target.id} dispatch={dispatch} />, actionButtonContainer);
+      target.insertAdjacentElement('beforeend', actionButtonContainer.firstChild as Element);
     }
     target.tabIndex = 0;
-    console.log(target)
+    setChangeData((pre: EditTextStateDataType) => ({...pre, id: target.id}))
   }
 
   const onBlurEvent = (e: React.FocusEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     const target = e.target
     target.contentEditable = "false"
     target.classList.remove("edit")
@@ -199,11 +295,13 @@ const HTMLRenderer: React.FC<HTMLRendererProps> = ({jsonData}) => {
     if (addedElement) {
       addedElement.remove();
     }
-    dispatch({type: "CustomTextEdit", text: changeData?.text, id: changeData?.id})
-    setChangeData({text: "", id: ""})
+    if (changeData?.text) {
+      dispatch({type: "CustomTextEdit", text: changeData.text, id: changeData?.id})
+      setChangeData({text: "", id: ""})
+    }
   }
 
-  const jsxElement = jsonToJSX(jsonData, handleDragStart, handleDragOver, handleDrop, onTextChange, onDoubleClick, onBlurEvent);
+  const jsxElement = jsonToJSX(jsonData, handleDragStart, throttle(handleDragOver, 1000), onDragLeave, handleDrop, onTextChange, onDoubleClick, onBlurEvent);
   return jsxElement
 };
 

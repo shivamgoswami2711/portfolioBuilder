@@ -1,18 +1,54 @@
 .EditActionComponent {
   position: relative;
+  border: none !important;
 }
 
 .EditActionComponent > ul {
   list-style: none;
   padding: 0;
   margin: 0;
-  position: absolute;
-  top: 0;
-  right: 0;
+  position: absolute !important;
+  top: -5px !important;
+  right: 0 !important;
+  border: 1px solid #fc8b8b80 !important;
+  background-color: #fc8b8b36 !important;
+  padding: 3px 0 0 0 !important;
+  border-radius: 6px !important;
   display: flex;
 }
 
 .EditActionComponent > ul > li {
-  margin-left: 10px;
-  cursor: pointer;
+  margin-left: 10px !important;
+  cursor: pointer !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+.EditActionComponent > ul > li > img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.dropDetectionBox {
+  width: 100% !important;
+  border: 1px solid #b1c2ff3f !important;
+  background-color: #b1c2ff28;
+}
+
+.dropDetectionBox > .dropDetectionBoxDotted {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  border: 1px dotted #b1c2ff9c;
+  border-width: 2px !important;
+  border-image-outset: 20px !important;
+  height: 50px !important;
+  margin: 15px !important;
+}
+
+.dropDetectionBox > .dropDetectionBoxDotted > span {
+  text-transform: capitalize !important;
+  font-weight: 800 !important;
+  color: #b1c2ff9c !important;
 }
